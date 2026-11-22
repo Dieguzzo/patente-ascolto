@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patente dell'ascolto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+/* VOICE  dry, bureaucratic, deadpan — the joke is that it looks exactly like the real theory exam
+   IDEA   the ministerial driving-licence quiz screen: numbered grid, figure, V / F, countdown, esito
+   PICTURE road signs redrawn as listening signs (roadblocks = divieti, ascolto attivo = obbligo)
+   COLOUR exam grey, institutional blue header, signal red / green only for the verdict
+   TYPE   Titillium Web, the lettering of Italian public forms */
+:root{color-scheme:light dark;
+ --bg:light-dark(#d9dde3,#14171c);--panel:light-dark(#f4f5f7,#1e232b);--card:light-dark(#fff,#262c35);
+ --ink:light-dark(#121417,#eef1f5);--mute:light-dark(#5b6370,#9aa3b1);--line:light-dark(#b9c0ca,#3a424e);
+ --blue:#0b4ea2;--blue2:light-dark(#0b4ea2,#4f8fe6);--red:#c8102e;--green:#0f7a3d;--sel:light-dark(#121417,#eef1f5);--seli:light-dark(#fff,#121417)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.45 "Titillium Web",Verdana,sans-serif;overflow-x:clip}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid #f2a900;outline-offset:2px}
+.top{background:var(--blue);color:#fff;display:flex;align-items:center;gap:16px;padding:10px max(3vw,14px);flex-wrap:wrap}
+.top b{font-weight:900;font-size:19px;letter-spacing:.01em}
+.top .who{opacity:.85;font-size:15px}
+.top .sp{flex:1}
+.timer{background:#fff;color:var(--blue);font-weight:900;font-size:22px;padding:2px 12px;border-radius:4px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.timer.low{color:var(--red)}
+.wrap{max-width:1180px;margin:0 auto;padding:16px max(3vw,12px) 28px}
+.grid{display:grid;grid-template-columns:repeat(16,minmax(0,1fr));gap:4px;margin-bottom:14px}
+.grid button{height:40px;border:1px solid var(--line);background:var(--card);border-radius:3px;font-weight:700;font-size:15px;padding:0}
+.grid button.ans{background:light-dark(#cdd9ea,#2c3e58);border-color:var(--blue2)}
+.grid button.cur{outline:3px solid var(--blue2);outline-offset:-1px}
+.grid button.ok{background:var(--green);color:#fff;border-color:var(--green)}
+.grid button.ko{background:var(--red);color:#fff;border-color:var(--red)}
+.q{background:var(--panel);border:1px solid var(--line);border-radius:6px;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);min-height:420px}
+.fig{background:var(--card);border-right:1px solid var(--line);display:grid;place-items:center;padding:20px;position:relative;border-radius:6px 0 0 6px}
+.fig svg{width:min(100%,300px);height:auto;filter:drop-shadow(0 6px 8px rgba(0,0,0,.18))}
+.fig .cap{position:absolute;left:12px;bottom:8px;font-size:13px;color:var(--mute)}
+.body{display:flex;flex-direction:column;padding:22px 24px;gap:14px}
+.num{font-weight:700;color:var(--blue2);font-size:16px}
+.txt{font-size:clamp(21px,2.3vw,28px);line-height:1.3;font-weight:600;flex:1;text-wrap:pretty}
+.vf{display:flex;gap:14px;justify-content:flex-end}
+.vf button{width:112px;height:92px;border:2px solid var(--ink);background:var(--card);border-radius:6px;font-size:44px;font-weight:900;line-height:1}
+.vf button[aria-pressed=true]{background:var(--sel);color:var(--seli)}
+.vf small{display:block;font-size:13px;font-weight:600;letter-spacing:.02em}
+.bar{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.btn{min-height:46px;padding:8px 18px;border:1px solid var(--line);background:var(--card);border-radius:4px;font-weight:700}
+.btn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.red{background:var(--red);border-color:var(--red);color:#fff;margin-left:auto}
+.hint{font-size:14px;color:var(--mute);margin-top:10px}
+.modal{position:fixed;inset:0;z-index:20;background:rgba(10,14,20,.55);display:grid;place-items:center;padding:16px}
+.modal .sheet{margin:0;width:100%;max-width:480px}
+.modal .bar .btn{flex:1 1 auto}
+.m{display:none}
+/* start + result */
+.sheet{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:clamp(20px,4vw,40px);max-width:760px;margin:24px auto}
+.sheet h1{font-size:clamp(32px,5vw,46px);line-height:1.05;margin:0 0 6px;font-weight:900;text-wrap:balance}
+.sheet .sub{color:var(--mute);margin:0 0 22px}
+.rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--line);border-radius:4px;margin:0 0 22px}
+.rules div{padding:12px 14px;border-right:1px solid var(--line)}.rules div:last-child{border:0}
+.rules strong{display:block;font-size:30px;font-weight:900;line-height:1.1}
+.rules span{font-size:14px;color:var(--mute)}
+label{font-weight:700;font-size:15px}
+input{width:100%;font:inherit;font-size:17px;padding:10px 12px;margin:6px 0 18px;border:1px solid var(--line);border-radius:4px;background:var(--panel);color:var(--ink)}
+.signs{display:flex;gap:10px;margin:0 0 20px}.signs svg{width:54px;height:54px}
+.esito{font-size:clamp(40px,8vw,64px);font-weight:900;line-height:1;margin:6px 0 8px}
+.esito.ok{color:var(--green)}.esito.ko{color:var(--red)}
+.lic{margin:22px 0;border-radius:14px;padding:18px 20px;background:linear-gradient(135deg,#f7c6d3,#f4dbe3 45%,#d9c6f0);color:#2a1a24;display:grid;grid-template-columns:86px minmax(0,1fr);gap:16px;box-shadow:0 10px 24px rgba(80,20,50,.18)}
+.lic .ph{background:rgba(255,255,255,.55);border-radius:8px;display:grid;place-items:center;aspect-ratio:3/4}
+.lic h3{margin:0;font-size:20px;font-weight:900;letter-spacing:.02em}
+.lic p{margin:2px 0;font-size:15px}
+.rev{list-style:none;padding:0;margin:18px 0 0;display:grid;gap:10px}
+.rev li{border:1px solid var(--line);border-left:6px solid var(--green);border-radius:4px;padding:12px 14px;background:var(--panel)}
+.rev li.ko{border-left-color:var(--red)}
+.rev .t{font-weight:600}
+.rev .a{font-size:14px;color:var(--mute);margin:4px 0}
+.rev .e{font-size:15px}
+.foot{max-width:1180px;margin:0 auto;padding:0 max(3vw,12px) 30px;font-size:13px;color:var(--mute)}
+[hidden]{display:none!important}
+@media(max-width:760px){
+ .q{grid-template-columns:minmax(0,1fr);min-height:0}
+ .fig{border-right:0;border-bottom:1px solid var(--line);border-radius:6px 6px 0 0;padding:14px}
+ .fig svg{width:150px}
+ .grid{grid-template-columns:repeat(8,minmax(0,1fr))}
+ .vf{justify-content:stretch}.vf button{flex:1;height:84px}
+ .rules strong{font-size:24px}
+ .top .who{display:none}
+ .d{display:none}.m{display:inline}
+ .sheet .bar .btn{flex:1 1 100%}
+ /* exam fits one phone screen: nothing to scroll to answer or hand in */
+ body.exam-on{height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+ body.exam-on main{flex:1;min-height:0;display:flex}
+ body.exam-on .foot,body.exam-on #exam>.hint{display:none}
+ body.exam-on .top{padding:8px 12px}
+ #exam{flex:1;min-height:0;display:flex;flex-direction:column;padding:8px 10px calc(10px + env(safe-area-inset-bottom))}
+ .grid{gap:3px;margin-bottom:8px}.grid button{height:32px;font-size:14px}
+ .q{flex:1;min-height:0;display:flex;flex-direction:column}
+ /* the sign takes the spare height, text and V/F stay together underneath */
+ .fig{flex:1 1 0;min-height:76px;padding:0}
+ #figsvg{position:absolute;inset:10px 10px 24px;display:grid;place-items:center}
+ #figsvg svg{width:100%;height:100%;max-height:210px}
+ .fig .cap{bottom:6px}
+ .body{flex:0 1 auto;min-height:0;padding:14px 16px 16px;gap:10px}
+ .num{font-size:14px}
+ .txt{flex:0 1 auto;font-size:clamp(17px,2.6dvh,22px);overflow-y:auto;min-height:min(5.3em,16dvh)}
+ .vf{gap:10px;flex:none}.vf button{height:clamp(56px,9dvh,84px);font-size:34px}.vf small{font-size:12px}
+ #exam>.bar{display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:8px;margin-top:8px;flex:none}
+ #exam>.bar .btn{padding:8px 6px;margin:0;white-space:nowrap}
+}
+@media(prefers-reduced-motion:no-preference){.q{animation:in .18s ease-out}@keyframes in{from{opacity:.4;transform:translateY(4px)}}}
+</style>
+</head>
+<body>
+<header class="top">
+ <b>Patente dell'ascolto</b><span class="who" id="who">Esame di teoria · Categoria A, ascolto attivo</span>
+ <span class="sp"></span><span class="timer" id="timer" hidden>10:00</span>
+</header>
+
+<main>
+ <section class="sheet" id="start">
+  <div class="signs" id="startSigns"></div>
+  <h1>Esame di teoria per la patente dell'ascolto</h1>
+  <p class="sub">Leggi bene ogni frase. Come all'esame vero, una parola come “non”, “sempre” o “solo” può ribaltare la risposta.</p>
+  <div class="rules">
+   <div><strong>16</strong><span>domande vero o falso</span></div>
+   <div><strong>10:00</strong><span>minuti a disposizione</span></div>
+   <div><strong>2</strong><span>errori massimi ammessi</span></div>
+  </div>
+  <form id="f">
+   <label for="nome">Nome del candidato (facoltativo)</label>
+   <input id="nome" autocomplete="given-name" maxlength="28" placeholder="Es. Marco">
+   <button class="btn pri" type="submit" style="width:100%">Inizia l'esame</button>
+  </form>
+  <p class="hint">Le domande lasciate in bianco valgono come errore, proprio come all'esame. Puoi cambiare risposta fino alla consegna.</p>
+ </section>
+
+ <section class="wrap" id="exam" hidden>
+  <nav class="grid" id="grid" aria-label="Domande"></nav>
+  <article class="q" id="q">
+   <div class="fig"><div id="figsvg"></div><span class="cap" id="cap"></span></div>
+   <div class="body">
+    <div class="num" id="num"></div>
+    <div class="txt" id="txt"></div>
+    <div class="vf">
+     <button id="bv" aria-pressed="false">V<small>VERO</small></button>
+     <button id="bf" aria-pressed="false">F<small>FALSO</small></button>
+    </div>
+   </div>
+  </article>
+  <div class="bar">
+   <button class="btn" id="prev">‹ <span class="d">Precedente</span><span class="m">Indietro</span></button>
+   <button class="btn" id="next"><span class="d">Successiva</span><span class="m">Avanti</span> ›</button>
+   <button class="btn red" id="end">Consegna</button>
+  </div>
+  <p class="hint">Da tastiera V e F per rispondere, frecce per spostarti.</p>
+  <div class="modal" id="confirm" hidden role="dialog" aria-modal="true" aria-labelledby="confirmTxt">
+   <div class="sheet">
+    <p style="margin:0 0 14px;font-weight:700;font-size:18px" id="confirmTxt"></p>
+    <div class="bar" style="margin:0"><button class="btn" id="back">Torna alle domande</button><button class="btn red" id="sure">Consegna</button></div>
+   </div>
+  </div>
+ </section>
+
+ <section class="sheet" id="result" hidden>
+  <div class="num">Esito dell'esame</div>
+  <div class="esito" id="esito"></div>
+  <p class="sub" id="esitoTxt" style="margin:0"></p>
+  <div id="lic"></div>
+  <div class="bar"><button class="btn pri" id="again">Rifai l'esame</button><button class="btn" id="showAll">Mostra tutte le risposte</button></div>
+  <ul class="rev" id="rev"></ul>
+ </section>
+</main>
+
+<p class="foot">Simulazione a scopo didattico del gruppo I Broccoli per il corso Relazioni efficaci. Non è un quiz ministeriale. Basata su Thomas Gordon (i 12 roadblock e l'ascolto attivo) e Robert Bolton, <i>People Skills</i>. Dato del pannello da UnitedHealthcare, 2026.</p>
+
+<script>
+{
+const R='#c8102e',B='#0b4ea2',K='#151515';
+const W='#fff';
+// one grid for every sign: 200x200 box, icon optically centred on (100,100), same ink and stroke weight
+const ink=K,SW=14;
+const sv=b=>`<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">${b}</svg>`;
+const T='M100 20 L190 176 L10 176 Z';
+const tri=i=>sv(`<path d="${T}" fill="${W}" stroke="${W}" stroke-width="18" stroke-linejoin="round"/><path d="${T}" fill="${R}" stroke="${R}" stroke-width="8" stroke-linejoin="round"/><path d="M100 66 L152 157 L48 157 Z" fill="${W}" stroke="${W}" stroke-width="6" stroke-linejoin="round"/>${i}`);
+const ban=i=>sv(`<circle cx="100" cy="100" r="98" fill="${W}"/><circle cx="100" cy="100" r="93" fill="${R}"/><circle cx="100" cy="100" r="72" fill="${W}"/>${i}`);
+const obl=i=>sv(`<circle cx="100" cy="100" r="98" fill="${W}"/><circle cx="100" cy="100" r="93" fill="${B}"/>${i}`);
+const ind=i=>sv(`<rect x="3" y="3" width="194" height="194" rx="24" fill="${W}"/><rect x="9" y="9" width="182" height="182" rx="19" fill="${B}"/>${i}`);
+const pan=i=>sv(`<rect x="8" y="48" width="184" height="104" rx="12" fill="${W}" stroke="${ink}" stroke-width="8"/>${i}`);
+const ln=(d,c=ink,w=SW)=>`<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+const FIG={
+ // pericolo: amico che parla (fumetto con testo), centrato sul baricentro del triangolo interno
+ A:{n:'Fig. 214',s:tri(`<g transform="translate(100 129) scale(1.12) translate(-100 -129)"><path d="M84 110h32a7 7 0 0 1 7 7v16a7 7 0 0 1-7 7h-14l-12 10v-10h-6a7 7 0 0 1-7-7v-16a7 7 0 0 1 7-7Z" fill="${ink}"/>${ln('M86 121h28M86 130h16',W,5)}</g>`)},
+ // divieto: giudicare (megafono)
+ B:{n:'Fig. 87',s:ban(`<path d="M58 88h16l40-22v68l-40-22H58a4 4 0 0 1-4-4V92a4 4 0 0 1 4-4Z" fill="${ink}"/><path d="M66 112h12l5 20a3 3 0 0 1-3 4h-7a3 3 0 0 1-3-2Z" fill="${ink}"/>${ln('M128 84l12-7M130 100h14M128 116l12 7',ink,9)}`)},
+ // divieto: risolvere al posto suo (svolta obbligata)
+ C:{n:'Fig. 88',s:ban(`<g transform="translate(-2.5 1.5)">${ln('M76 138V104q0-20 20-20h10',ink,16).replace('stroke-linecap="round"','stroke-linecap="butt"')}<path d="M104 62l32 22-32 22Z" fill="${ink}" stroke="${ink}" stroke-width="4" stroke-linejoin="round"/></g>`)},
+ // divieto: sminuire (rimpicciolire)
+ D:{n:'Fig. 89',s:ban(ln('M136 64L110 90M110 68v22h22M64 136l26-26M68 110h22v22'))},
+ // obbligo: ascolto attivo (orecchio)
+ E:{n:'Fig. 301',s:obl(`<path transform="translate(100 100) scale(4.5) translate(-12 -11.6)" d="M17 20c-.29 0-.56-.06-.76-.15-.71-.37-1.21-.88-1.71-2.38-.51-1.56-1.47-2.29-2.39-3-.79-.61-1.61-1.24-2.32-2.53C9.29 10.98 9 9.930 9 9c0-2.8 2.2-5 5-5s5 2.2 5 5h2c0-3.93-3.07-7-7-7S7 5.07 7 9c0 1.26.38 2.65 1.07 3.9.91 1.65 1.98 2.48 2.85 3.15.81.62 1.39 1.07 1.71 2.05.6 1.82 1.37 2.84 2.73 3.55.51.23 1.07.35 1.64.35 2.21 0 4-1.790 4-4h-2c0 1.1-.9 2-2 2zM7.64 2.64L6.22 1.22C4.23 3.21 3 5.96 3 9s1.23 5.79 3.22 7.78l1.41-1.41C6.01 13.74 5 11.49 5 9s1.01-4.74 2.64-6.36zM11.5 9c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5-2.5 1.12-2.5 2.5z" fill="${W}"/>`)},
+ // indicazione: di chi è il problema
+ F:{n:'Fig. 412',s:ind(`<g transform="translate(0 4)">${ln('M78 78c0-16 10-26 23-26 14 0 23 9 23 22 0 17-23 19-23 37v5',W,16)}<circle cx="101" cy="140" r="10" fill="${W}"/></g>`)},
+ // pannello integrativo con il dato
+ G:{n:'Fig. 520',s:pan(`<text x="100" y="89" text-anchor="middle" dominant-baseline="central" font-family="Titillium Web,Verdana,sans-serif" font-weight="900" font-size="54" fill="${ink}">47%</text><text x="100" y="125" text-anchor="middle" dominant-baseline="central" font-family="Titillium Web,Verdana,sans-serif" font-weight="700" font-size="16" letter-spacing="1" fill="${ink}">PRIMA UN AMICO</text>`)}
+};
+const Q=[
+ ['A',1,"Il segnale raffigurato preannuncia un amico che ha bisogno di sfogarsi.","Il triangolo è un segnale di pericolo: avvisa che sta arrivando un momento delicato, non un problema da sbrigare."],
+ ['A',0,"In presenza del segnale raffigurato il conducente deve indicare subito all'amico la strada più breve per risolvere il problema.","Dare subito la soluzione è proprio uno dei roadblock. Prima si ascolta."],
+ ['A',1,"In presenza del segnale raffigurato non è vietato restare in silenzio e lasciar parlare l'amico.","“Non è vietato” vuol dire “è consentito”. Il silenzio attento è una delle forme più semplici di ascolto."],
+ ['A',0,"In presenza del segnale raffigurato fare all'amico molte domande una dopo l'altra non può mai essere un ostacolo.","Per Gordon anche interrogare e indagare è un roadblock: le domande a raffica seguono la tua curiosità, non il suo bisogno."],
+ ['B',0,"Il segnale raffigurato vieta di giudicare l'amico, ma non vieta di fargli complimenti per tirarlo su.","Trabocchetto. Anche lodare è un giudizio, solo positivo (Bolton lo mette nella famiglia del giudicare)."],
+ ['B',0,"La frase «Potevi pensarci prima» è consentita in presenza del segnale raffigurato, purché detta con un tono gentile.","È una critica. Il tono gentile non la trasforma in ascolto."],
+ ['C',1,"Il segnale raffigurato non consente di ordinare all'amico cosa fare, neppure quando si è sicuri di avere ragione.","Ordinare rientra nel “dare soluzioni”. Avere ragione non cambia che il problema è suo."],
+ ['C',0,"La frase «Domani fai una lista e vedrai che passa» non è un consiglio, quindi non rientra tra i roadblock.","È un consiglio non richiesto, quindi è un roadblock della famiglia “dare soluzioni”."],
+ ['D',0,"Rassicurare l'amico dicendo «Dai, domani passa» non è un modo per evitare il suo problema.","Rassicurare è un modo per evitarlo: chiude la conversazione invece di aprirla."],
+ ['D',0,"Cambiare discorso per distrarre l'amico è consentito, ma solo se non ha ancora finito di parlare.","Distrarre è un roadblock sempre, e interromperlo mentre parla lo peggiora."],
+ ['E',1,"Il segnale raffigurato obbliga a restituire all'amico, con parole proprie, ciò che si è capito.","È la definizione di ascolto attivo: rimandare il messaggio con parole tue, senza giudizi né consigli."],
+ ['E',0,"Ripetere parola per parola quello che ha detto l'amico è sempre ascolto attivo.","“Sempre” è la parola trappola. Fare il pappagallo non dimostra di aver capito: servono parole tue."],
+ ['E',1,"L'ascolto attivo non si limita ai fatti raccontati, ma riguarda anche l'emozione che c'è sotto.","Vero. La parte più importante da restituire è spesso l'emozione, non la cronaca."],
+ ['F',1,"Se il problema è dell'amico, non spetta a chi ascolta risolverlo al posto suo.","L'obiettivo non è risolvere, è aiutare l'altro a trovare la sua strada."],
+ ['F',0,"La frase «Il tuo problema è che sei insicuro» non è un roadblock, perché dà un nome a un'emozione.","È una diagnosi, cioè un giudizio. Nominare un'emozione suona più come “Sembra che ti senta…”."],
+ ['G',1,"Il pannello raffigurato indica che quasi un giovane su due, se sta male, ne parla prima con un amico.","Il 47% si confida prima con un amico, solo il 23% con un adulto (UnitedHealthcare, 2026)."]
+];
+const $=id=>document.getElementById(id);
+const TIME=600,MAXERR=2;
+let order=[],ans=[],cur=0,left=TIME,tick=null,name='',done=false;
+$('startSigns').innerHTML=['A','B','E','F'].map(k=>FIG[k].s).join('');
+try{const n=localStorage.getItem('pda-nome');if(n)$('nome').value=n}catch(e){}
+
+function start(){
+ name=$('nome').value.trim();
+ try{localStorage.setItem('pda-nome',name)}catch(e){}
+ order=Q.map((_,i)=>i).sort(()=>Math.random()-.5);
+ ans=Array(Q.length).fill(null);cur=0;left=TIME;done=false;
+ $('who').textContent='Candidato: '+(name||'anonimo')+' · Categoria A, ascolto attivo';
+ document.body.classList.add('exam-on');$('start').hidden=true;$('result').hidden=true;$('exam').hidden=false;$('timer').hidden=false;$('confirm').hidden=true;
+ clearInterval(tick);tick=setInterval(()=>{left--;drawTime();if(left<=0){clearInterval(tick);finish()}},1000);
+ drawTime();draw();window.scrollTo(0,0);
+}
+function drawTime(){const m=Math.floor(left/60),s=left%60;$('timer').textContent=m+':'+String(s).padStart(2,'0');$('timer').classList.toggle('low',left<=60)}
+function draw(){
+ const q=Q[order[cur]],f=FIG[q[0]];
+ $('grid').innerHTML=order.map((_,i)=>`<button data-i="${i}" class="${ans[i]!==null?'ans':''} ${i===cur?'cur':''}" aria-label="Domanda ${i+1}${ans[i]!==null?', risposta data':''}">${i+1}</button>`).join('');
+ $('figsvg').innerHTML=f.s;$('cap').textContent=f.n;
+ $('num').textContent='Domanda n. '+(cur+1)+' di '+Q.length;
+ $('txt').textContent=q[2];
+ $('bv').setAttribute('aria-pressed',ans[cur]===1);$('bf').setAttribute('aria-pressed',ans[cur]===0);
+ $('prev').disabled=cur===0;$('next').disabled=cur===Q.length-1;
+ const el=$('q');el.style.animation='none';void el.offsetWidth;el.style.animation='';
+}
+function pick(v){if(done)return;ans[cur]=v;draw();setTimeout(()=>{if(cur<Q.length-1&&ans[cur]===v){cur++;draw()}},260)}
+function ask(){
+ const blank=ans.filter(a=>a===null).length;
+ $('confirmTxt').textContent=blank?`Hai ancora ${blank} domand${blank===1?'a':'e'} senza risposta, che contano come errore. Vuoi consegnare lo stesso?`:'Vuoi consegnare la scheda? Dopo non potrai più cambiare le risposte.';
+ $('confirm').hidden=false;$('sure').focus();
+}
+function finish(){
+ done=true;clearInterval(tick);$('timer').hidden=true;$('confirm').hidden=true;document.body.classList.remove('exam-on');
+ const res=order.map((qi,i)=>({q:Q[qi],i,a:ans[i],ok:ans[i]===Q[qi][1]}));
+ const err=res.filter(r=>!r.ok).length,pass=err<=MAXERR;
+ $('exam').hidden=true;$('result').hidden=false;
+ $('esito').textContent=pass?'IDONEO':'NON IDONEO';$('esito').className='esito '+(pass?'ok':'ko');
+ $('esitoTxt').textContent=(err===0?'Nessun errore.':err===1?'1 errore':err+' errori')+(err?' su '+Q.length+' domande, massimo ammesso '+MAXERR+'.':' Ascoltatore modello.')+(left<=0?' Tempo scaduto.':'');
+ const d=new Date().toLocaleDateString('it-IT');
+ $('lic').innerHTML=pass?`<div class="lic"><div class="ph">${FIG.E.s}</div><div><h3>PATENTE DELL'ASCOLTO</h3><p><b>${esc(name||'Candidato anonimo')}</b></p><p>Categoria A · ascolto attivo</p><p>Rilasciata il ${d} dal Navigatore dell'ascolto</p><p style="font-size:13px;opacity:.75">Valida finché lasci a lui il volante.</p></div></div>`:'<p class="hint">Rileggi le spiegazioni qui sotto e riprova. All\'esame vero puoi ripeterlo, qui anche subito.</p>';
+ const list=r=>`<li class="${r.ok?'':'ko'}"><div class="a">Domanda ${r.i+1} · ${FIG[r.q[0]].n} · ${r.ok?'corretta':'sbagliata'}</div><div class="t">${r.q[2]}</div><div class="a">Risposta data: <b>${r.a===null?'nessuna':r.a?'Vero':'Falso'}</b> · risposta esatta: <b>${r.q[1]?'Vero':'Falso'}</b></div><div class="e">${r.q[3]}</div></li>`;
+ const wrong=res.filter(r=>!r.ok);
+ $('rev').innerHTML=wrong.length?wrong.map(list).join(''):'';
+ $('showAll').hidden=!wrong.length&&false;
+ $('showAll').onclick=()=>{$('rev').innerHTML=res.map(list).join('');$('showAll').hidden=true};
+ $('showAll').hidden=false;
+ window.scrollTo(0,0);
+}
+function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+$('f').addEventListener('submit',e=>{e.preventDefault();start()});
+$('bv').onclick=()=>pick(1);$('bf').onclick=()=>pick(0);
+$('prev').onclick=()=>{if(cur>0){cur--;draw()}};
+$('next').onclick=()=>{if(cur<Q.length-1){cur++;draw()}};
+$('grid').addEventListener('click',e=>{const b=e.target.closest('button');if(b){cur=+b.dataset.i;draw()}});
+$('end').onclick=ask;$('back').onclick=()=>{$('confirm').hidden=true};$('sure').onclick=finish;
+$('again').onclick=()=>{$('result').hidden=true;$('start').hidden=false;window.scrollTo(0,0)};
+document.addEventListener('keydown',e=>{
+ if($('exam').hidden||e.target.tagName==='INPUT')return;
+ const k=e.key.toLowerCase();
+ if(k==='v')pick(1);else if(k==='f')pick(0);
+ else if(e.key==='ArrowRight'&&cur<Q.length-1){cur++;draw()}
+ else if(e.key==='ArrowLeft'&&cur>0){cur--;draw()}
+});
+}
+</script>
+</body>
+</html>
